@@ -1,0 +1,49 @@
+{
+  "name": "horizon",
+  "version": "1.0.0",
+  "description": "React + TanStack + Electron desktop application",
+  "type": "module",
+  "main": "dist/main.mjs",
+  "scripts": {
+    "dev": "nasti electron",
+    "build": "nasti electron-build",
+    "preview": "nasti preview",
+    "test": "lightning run",
+    "test:watch": "lightning",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src *.config.ts",
+    "format": "oxfmt --write .",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+  },
+  "keywords": [
+    "react",
+    "tanstack",
+    "electron"
+  ],
+  "author": "Zixiao Laboratories",
+  "license": "MIT",
+  "dependencies": {
+    "@tanstack/react-query": "5.105.0",
+    "@tanstack/react-query-devtools": "5.105.0",
+    "@tanstack/react-virtual": "3.14.24",
+    "monaco-editor": "git://github.com/zixiao-labs/monaco-editor.git",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@lightning-js/lightning": "3.1.2",
+    "@nasti-toolchain/nasti": "2.9.0",
+    "@types/connect": "^3.4.38",
+        "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "electron": "^41.0.0",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

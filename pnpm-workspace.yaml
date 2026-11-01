@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+
+allowBuilds:
+  electron: true
+  monaco-editor: false
+
+minimumReleaseAgeExclude:
+  - "@nasti-toolchain/nasti@2.9.0"
