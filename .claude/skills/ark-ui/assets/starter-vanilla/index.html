@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en" data-ark-theme="endfield" data-ark-depth="complex">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Orbital Field Lab</title>
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <script src="app.js?v=4" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="ark-shell">
+      <header class="ark-topbar">
+        <a class="ark-wordmark" href="#overview" aria-label="Orbital Field Lab home">
+          <span class="ark-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong data-copy="brand">ORBITAL</strong><small data-copy="brandCode">FIELD LAB / 07</small></span>
+        </a>
+        <p class="ark-top-status"><span class="ark-pulse" aria-hidden="true"></span> <span data-copy="status">RELAY ONLINE</span></p>
+        <button class="ark-menu-button" type="button" aria-expanded="false" aria-controls="ark-rail">Menu</button>
+      </header>
+
+      <nav class="ark-rail" id="ark-rail" aria-label="Primary">
+        <button class="ark-rail-item is-active" type="button" data-target="overview" aria-current="page">
+          <span class="ark-rail-index">01</span><span data-copy="nav1">Overview</span>
+        </button>
+        <button class="ark-rail-item" type="button" data-target="modules">
+          <span class="ark-rail-index">02</span><span data-copy="nav2">Modules</span>
+        </button>
+        <button class="ark-rail-item" type="button" data-target="archive">
+          <span class="ark-rail-index">03</span><span data-copy="nav3">Archive</span>
+        </button>
+        <div class="ark-rail-code" aria-hidden="true">OFL<br />49°<br />N–07</div>
+      </nav>
+
+      <main id="main" class="ark-main">
+        <section class="ark-hero ark-observed" id="overview" data-section="overview">
+          <div class="ark-grid" aria-hidden="true"></div>
+          <div class="ark-art" aria-hidden="true">
+            <div class="ark-orbit ark-orbit-a"></div>
+            <div class="ark-orbit ark-orbit-b"></div>
+            <div class="ark-orbit ark-orbit-c"></div>
+            <div class="ark-core"><span></span></div>
+            <div class="ark-vector ark-vector-a"></div>
+            <div class="ark-vector ark-vector-b"></div>
+          </div>
+
+          <div class="ark-hero-copy ark-reveal" data-reveal>
+            <p class="ark-kicker" data-copy="kicker">FIELD OPERATIONS / SIGNAL ARCHIVE</p>
+            <h1><span class="ark-title-solid" data-copy="title">FRONTIER</span><br /><span class="ark-title-outline" data-copy="titleAccent">/ SIGNAL</span></h1>
+            <p class="ark-lede" data-copy="lede">A fictional operations interface built from an evidence-based visual grammar: edge instrumentation, one signal color, bilingual-scale hierarchy, and original technical geometry.</p>
+            <div class="ark-actions">
+              <a class="ark-button ark-button-primary" href="#modules" data-copy="primaryAction">Open modules</a>
+              <a class="ark-button" href="#archive" data-copy="secondaryAction">Read archive</a>
+            </div>
+          </div>
+
+          <aside class="ark-readout ark-reveal" data-reveal aria-label="Current relay status">
+            <div class="ark-readout-head"><span data-copy="readoutTitle">RELAY // 07</span><strong data-copy="readoutState">ACTIVE</strong></div>
+            <dl>
+              <div><dt data-copy="metric1Label">Signal</dt><dd data-copy="metric1Value">98.42%</dd></div>
+              <div><dt data-copy="metric2Label">Drift</dt><dd data-copy="metric2Value">+0.018</dd></div>
+              <div><dt data-copy="metric3Label">Window</dt><dd data-copy="metric3Value">04:26</dd></div>
+            </dl>
+            <div class="ark-spark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </aside>
+
+          <div class="ark-hero-footer" aria-label="Mission metadata">
+            <span data-copy="meta1">49° 16′ 40.12″ N</span><span data-copy="meta2">NODE / OFL-07</span><span data-copy="meta3">REV. 2026.07</span>
+          </div>
+        </section>
+
+        <section class="ark-section ark-observed" id="modules" data-section="modules">
+          <header class="ark-section-title ark-reveal" data-reveal>
+            <p class="ark-kicker">SYSTEM MAP / 02</p>
+            <h2>OPERATION MODULES</h2>
+            <span class="ark-title-rule" aria-hidden="true"></span>
+          </header>
+          <div class="ark-module-grid">
+            <article class="ark-module ark-reveal" data-reveal>
+              <p class="ark-module-code">MD–01 / CALIBRATE</p>
+              <h3>Signal lattice</h3>
+              <p>Turn raw sensor points into a readable topology with stable labels and visible uncertainty.</p>
+              <div class="ark-module-chart" aria-label="Signal lattice sample: six rising bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <a href="#archive">Inspect protocol <span aria-hidden="true">→</span></a>
+            </article>
+            <article class="ark-module ark-module-dark ark-reveal" data-reveal>
+              <p class="ark-module-code">MD–02 / ROUTE</p>
+              <h3>Transit window</h3>
+              <p>Keep the primary route clear while secondary telemetry stays docked to the perimeter.</p>
+              <div class="ark-route" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+              <a href="#archive">Inspect protocol <span aria-hidden="true">→</span></a>
+            </article>
+            <article class="ark-module ark-reveal" data-reveal>
+              <p class="ark-module-code">MD–03 / VERIFY</p>
+              <h3>Archive integrity</h3>
+              <p>Separate verified state, inferred state, and missing evidence instead of decorating with fake data.</p>
+              <ul class="ark-checks">
+                <li><span>Source chain</span><strong>VERIFIED</strong></li>
+                <li><span>Visual diff</span><strong>READY</strong></li>
+                <li><span>Rights status</span><strong>ORIGINAL</strong></li>
+              </ul>
+              <a href="#archive">Inspect protocol <span aria-hidden="true">→</span></a>
+            </article>
+          </div>
+        </section>
+
+        <section class="ark-section ark-archive ark-observed" id="archive" data-section="archive">
+          <header class="ark-section-title ark-reveal" data-reveal>
+            <p class="ark-kicker">VISUAL FAMILIES / 03</p>
+            <h2>ARCHIVE SELECTOR</h2>
+            <span class="ark-title-rule" aria-hidden="true"></span>
+          </header>
+
+          <div class="ark-theme-picker ark-reveal" data-reveal role="group" aria-label="Visual family">
+            <button type="button" data-theme="ark">ARK</button>
+            <button class="is-selected" type="button" data-theme="endfield" aria-pressed="true">ENDFIELD</button>
+            <button type="button" data-theme="exa">EX ASTRIS</button>
+            <button type="button" data-theme="popucom">POPUCOM</button>
+            <button type="button" data-theme="corporate">CORPORATE</button>
+          </div>
+
+          <div class="ark-depth-control ark-reveal" data-reveal>
+            <p class="ark-panel-label">APPLICATION DEPTH / COMPLEX BASELINE</p>
+            <div class="ark-depth-picker" role="group" aria-label="Application depth">
+              <button type="button" data-depth="minimal" aria-pressed="false">01 / MINIMAL</button>
+              <button type="button" data-depth="moderate" aria-pressed="false">02 / MODERATE</button>
+              <button class="is-selected" type="button" data-depth="complex" aria-pressed="true">03 / COMPLEX</button>
+              <button type="button" data-depth="maximal" aria-pressed="false">04 / MAXIMAL</button>
+            </div>
+          </div>
+
+          <div class="ark-archive-layout">
+            <div class="ark-tablist ark-reveal" data-reveal role="tablist" aria-label="Archive detail">
+              <button id="tab-structure" type="button" role="tab" aria-controls="panel-structure" aria-selected="true">01 / STRUCTURE</button>
+              <button id="tab-motion" type="button" role="tab" aria-controls="panel-motion" aria-selected="false">02 / MOTION</button>
+              <button id="tab-rights" type="button" role="tab" aria-controls="panel-rights" aria-selected="false">03 / RIGHTS</button>
+            </div>
+            <div class="ark-tabpanels ark-reveal" data-reveal>
+              <section id="panel-structure" role="tabpanel" aria-labelledby="tab-structure">
+                <p class="ark-panel-label">SELECTED RECORD / STRUCTURE</p>
+                <h3>Stage + instrumentation</h3>
+                <p>Let one dominant visual carry atmosphere. Attach navigation, status, and actions to its edges. Use a large display statement, tiny operational labels, and restrained middle-size copy.</p>
+              </section>
+              <section id="panel-motion" role="tabpanel" aria-labelledby="tab-motion" hidden>
+                <p class="ark-panel-label">SELECTED RECORD / MOTION</p>
+                <h3>Directional reveal</h3>
+                <p>Reveal hierarchy with clipped wipes and short directional travel. Keep interaction under 350ms, section motion under 900ms, and disable loops for reduced motion.</p>
+              </section>
+              <section id="panel-rights" role="tabpanel" aria-labelledby="tab-rights" hidden>
+                <p class="ark-panel-label">SELECTED RECORD / RIGHTS</p>
+                <h3>Original assets only</h3>
+                <p>Use public production sites as evidence, not as an asset library. Rebuild geometry and texture; never present reconstructed code or copied artwork as official source.</p>
+              </section>
+            </div>
+            <aside class="ark-record-card ark-reveal" data-reveal>
+              <span class="ark-record-number">03</span>
+              <p>RECORD TYPE</p><strong>DESIGN SYSTEM</strong>
+              <p>STATUS</p><strong>VERIFIED / ORIGINAL</strong>
+              <p>OUTPUT</p><strong>HTML · CSS · JS</strong>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="ark-footer">
+        <p>ORBITAL FIELD LAB — FICTIONAL DEMONSTRATION</p>
+        <p>NO AFFILIATION / ORIGINAL ASSETS</p>
+      </footer>
+    </div>
+  </body>
+</html>

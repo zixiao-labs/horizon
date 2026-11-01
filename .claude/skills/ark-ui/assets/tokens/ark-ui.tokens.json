@@ -1,0 +1,119 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "themes": {
+    "ark": {
+      "ink": "#080a0b",
+      "paper": "#f4f6f6",
+      "signal": "#18d1ff",
+      "state": "#c8eb21",
+      "accentAlt": "#8fc31f",
+      "muted": "#8d9396",
+      "panel": "rgba(8, 10, 11, 0.82)",
+      "shell": "black-edge-dock",
+      "stage": "blueprint-media",
+      "radius": "0px"
+    },
+    "endfield": {
+      "ink": "#191919",
+      "paper": "#f2f2f0",
+      "signal": "#fffa00",
+      "state": "#00ffa2",
+      "accentAlt": "#00ffa2",
+      "muted": "#888888",
+      "panel": "rgba(25, 25, 25, 0.84)",
+      "shell": "pale-rail-charcoal-dock",
+      "stage": "calibration-route-matrix",
+      "radius": "2px"
+    },
+    "exa": {
+      "ink": "#080914",
+      "paper": "#f3f2ef",
+      "signal": "#00fbec",
+      "state": "#925dff",
+      "accentAlt": "#925dff",
+      "muted": "#9b9daa",
+      "panel": "rgba(8, 9, 20, 0.78)",
+      "shell": "midnight-archive-rail",
+      "stage": "orbital-chronology",
+      "radius": "999px"
+    },
+    "popucom": {
+      "ink": "#141414",
+      "paper": "#fffdf4",
+      "signal": "#ffcc1a",
+      "state": "#3994ff",
+      "accentAlt": "#ffa800",
+      "muted": "#5a5a5a",
+      "panel": "rgba(20, 20, 20, 0.86)",
+      "shell": "dotted-dark-cap",
+      "stage": "cooperative-color-field",
+      "radius": "999px"
+    },
+    "corporate": {
+      "ink": "#050505",
+      "paper": "#f3f3f3",
+      "signal": "#f3ff00",
+      "state": "#ffffff",
+      "accentAlt": "#ffffff",
+      "muted": "#8a8a8a",
+      "panel": "rgba(0, 0, 0, 0.88)",
+      "shell": "translucent-media-header",
+      "stage": "editorial-project-sequence",
+      "radius": "0px"
+    }
+  },
+  "depths": {
+    "minimal": {
+      "level": 1,
+      "label": "极简",
+      "stageLayers": "0-1",
+      "componentCoverage": "critical",
+      "motion": "direct-only",
+      "responsive": "safe-stack"
+    },
+    "moderate": {
+      "level": 2,
+      "label": "中等",
+      "stageLayers": "1-2",
+      "componentCoverage": "shared-major",
+      "motion": "reveal-and-direct",
+      "responsive": "shell-adaptation"
+    },
+    "complex": {
+      "level": 3,
+      "label": "复杂",
+      "stageLayers": "2-4",
+      "componentCoverage": "full-shared-system",
+      "motion": "coordinated-families",
+      "responsive": "full-recomposition"
+    },
+    "maximal": {
+      "level": 4,
+      "label": "极繁",
+      "stageLayers": "4-6",
+      "componentCoverage": "state-specific",
+      "motion": "section-choreography",
+      "responsive": "mode-specific-composition"
+    }
+  },
+  "typography": {
+    "uiCjk": "\"Noto Sans SC\", \"Source Han Sans SC\", \"PingFang SC\", sans-serif",
+    "display": "\"Arial Narrow\", \"Roboto Condensed\", \"DIN Condensed\", sans-serif",
+    "technical": "\"Space Grotesk\", \"IBM Plex Sans\", system-ui, sans-serif",
+    "serif": "\"Noto Serif SC\", \"Source Han Serif SC\", serif",
+    "mono": "\"IBM Plex Mono\", \"SFMono-Regular\", Consolas, monospace"
+  },
+  "geometry": {
+    "rule": "1px",
+    "radiusTechnical": "2px",
+    "radiusFunctional": "4px",
+    "railDesktop": "72px",
+    "topbarDesktop": "72px"
+  },
+  "motion": {
+    "direct": "240ms",
+    "reveal": "650ms",
+    "attention": "1800ms",
+    "ease": "cubic-bezier(.22,.8,.2,1)"
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ark UI"
+  short_description: "Build evidence-based interfaces at a chosen depth"
+  default_prompt: "Use $ark-ui to design and implement an Endfield interface at complexity level 3."

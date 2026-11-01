@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Ark family — Nightline deployment</title>
+    <link rel="stylesheet" href="showcase.css?v=2" />
+    <script src="showcase.js?v=1" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#sample-main">Skip to sample</a>
+    <div class="family-showcase" data-family="ark" data-depth="complex">
+      <header class="family-topbar">
+        <a class="family-brand" href="#sample-main"><span class="family-brand-mark" aria-hidden="true"></span><span><strong>Terra Index</strong><small>FICTIONAL SYSTEM / 07</small></span></a>
+        <p class="family-status"><i aria-hidden="true"></i> Shift active</p>
+        <div class="depth-control" role="group" aria-label="Application depth"><span>DEPTH</span><button type="button" data-set-depth="minimal" aria-label="Minimal depth">01</button><button type="button" data-set-depth="moderate" aria-label="Moderate depth">02</button><button type="button" data-set-depth="complex" aria-label="Complex depth">03</button><button type="button" data-set-depth="maximal" aria-label="Maximal depth">04</button></div>
+      </header>
+      <nav class="family-rail" aria-label="Sample views">
+        <button type="button" data-view="operation" aria-current="page"><span>01</span>Operation</button>
+        <button type="button" data-view="dossiers"><span>02</span>Dossiers</button>
+        <button type="button" data-view="archive"><span>03</span>Archive</button>
+        <p class="family-rail-note">ZONE<br />C-07<br />20:40</p>
+      </nav>
+      <main class="family-main" id="sample-main">
+        <section class="family-stage" aria-labelledby="ark-title">
+          <div class="family-decoration" aria-hidden="true"><span></span><span class="decor-secondary"></span><span class="decor-tertiary"></span></div>
+          <div class="family-copy">
+            <p class="family-eyebrow">Deployment control / Night shift</p>
+            <h1 id="ark-title">Operation<br /><span>/ Nightline</span></h1>
+            <p class="family-lede">Compare three active zones, inspect the selected team, and commit the next route from one indexed deployment stage.</p>
+            <div class="family-actions"><button class="family-action primary" type="button" data-demo-action="Deployment review opened for Zone C-07.">Review deployment</button><button class="family-action" type="button" data-demo-action="Dossier index opened with three available teams.">Open dossier</button></div>
+          </div>
+          <aside class="family-panel" aria-label="Selected deployment">
+            <div class="panel-head"><span>ZONE // C-07</span><strong>READY</strong></div>
+            <dl><div><dt>Available teams</dt><dd>03</dd></div><div><dt>Valid routes</dt><dd>02</dd></div><div><dt>Decision window</dt><dd>08:40</dd></div></dl>
+            <div class="panel-route" aria-label="Route crosses four verified checkpoints"><i></i><i></i><i></i><i></i></div>
+          </aside>
+          <div class="stage-track" aria-label="Deployment stages"><article><small>01 / SELECTED</small><strong>North access</strong></article><article><small>02 / AVAILABLE</small><strong>Service corridor</strong></article><article><small>03 / HELD</small><strong>Archive gate</strong></article></div>
+          <p class="live-status" data-live-status aria-live="polite">Application depth: complex. Fictional sample with original geometry.</p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

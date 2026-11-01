@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" role="img" aria-labelledby="title desc">
+  <title id="title">Ark UI 风格族与四档应用深度</title>
+  <desc id="desc">五种风格族与极简、中等、复杂、极繁四档应用深度的中文静态说明图，并以复杂档展示六个实施维度。</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#d8d8d2" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f3ff00" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#f3ff00" stop-opacity="0"/>
+    </linearGradient>
+    <style>
+      .sans{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC","Microsoft YaHei",sans-serif}
+      .mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+      .ink{fill:#111310}.muted{fill:#666963}.paper{fill:#f5f5f0}.line{stroke:#b9bcb5}
+      .micro{font-size:14px;letter-spacing:2px}.small{font-size:17px}.body{font-size:20px}.label{font-size:21px;font-weight:650}
+    </style>
+  </defs>
+
+  <rect width="1400" height="860" fill="#f5f5f0"/>
+  <rect y="76" width="1400" height="784" fill="url(#grid)" opacity=".58"/>
+  <rect width="1400" height="76" fill="#111310"/>
+  <path d="M0 76H1400" stroke="#f3ff00" stroke-width="5"/>
+  <path d="M1168 0H1400V76H1128Z" fill="#f3ff00"/>
+  <text x="50" y="31" class="sans micro" fill="#f3ff00">ARK UI / DESIGN CONTRACT</text>
+  <text x="50" y="58" class="sans small" fill="#ffffff">风格族决定界面性格，应用深度决定实施覆盖</text>
+  <text x="1328" y="47" text-anchor="end" class="mono label ink">F × D</text>
+
+  <text x="50" y="132" class="sans micro muted">01 / 选择风格族 · VISUAL FAMILY</text>
+  <g class="sans body">
+    <rect x="50" y="154" width="178" height="52" fill="#111310"/>
+    <rect x="228" y="154" width="178" height="52" fill="#ffffff" stroke="#b9bcb5"/>
+    <rect x="406" y="154" width="178" height="52" fill="#ffffff" stroke="#b9bcb5"/>
+    <rect x="584" y="154" width="178" height="52" fill="#ffffff" stroke="#b9bcb5"/>
+    <rect x="762" y="154" width="178" height="52" fill="#ffffff" stroke="#b9bcb5"/>
+    <rect x="50" y="154" width="8" height="52" fill="#18d1ff"/>
+    <rect x="228" y="154" width="8" height="52" fill="#f3ff00"/>
+    <rect x="406" y="154" width="8" height="52" fill="#00fbec"/>
+    <rect x="584" y="154" width="8" height="52" fill="#ffd52e"/>
+    <rect x="762" y="154" width="8" height="52" fill="#d9ff00"/>
+    <text x="139" y="188" text-anchor="middle" fill="#ffffff">明日方舟</text>
+    <text x="317" y="188" text-anchor="middle" class="ink">终末地</text>
+    <text x="495" y="188" text-anchor="middle" class="ink">来自星尘</text>
+    <text x="673" y="188" text-anchor="middle" class="ink">泡姆泡姆</text>
+    <text x="851" y="188" text-anchor="middle" class="ink">鹰角企业</text>
+  </g>
+  <text x="973" y="176" class="sans small muted">只选一个主风格族</text>
+  <text x="973" y="200" class="sans small muted">深度与风格互相独立</text>
+
+  <text x="50" y="260" class="sans micro muted">02 / 选择应用深度 · APPLICATION DEPTH</text>
+  <g class="sans">
+    <g transform="translate(50 284)">
+      <rect width="300" height="184" fill="#ffffff" stroke="#b9bcb5"/>
+      <rect width="300" height="8" fill="#b9bcb5"/>
+      <text x="22" y="53" class="mono micro muted">LEVEL 01</text>
+      <text x="22" y="91" font-size="31" font-weight="760" class="ink">极简</text>
+      <text x="22" y="121" class="sans small muted">保留原布局</text>
+      <text x="22" y="148" class="sans small muted">建立关键识别与状态</text>
+      <text x="278" y="54" text-anchor="end" font-size="40" font-weight="800" fill="#d0d1cc">01</text>
+    </g>
+    <g transform="translate(366 284)">
+      <rect width="300" height="184" fill="#ffffff" stroke="#b9bcb5"/>
+      <rect width="300" height="8" fill="#787b75"/>
+      <text x="22" y="53" class="mono micro muted">LEVEL 02</text>
+      <text x="22" y="91" font-size="31" font-weight="760" class="ink">中等</text>
+      <text x="22" y="121" class="sans small muted">重构主要壳层</text>
+      <text x="22" y="148" class="sans small muted">加入受控舞台与仪表</text>
+      <text x="278" y="54" text-anchor="end" font-size="40" font-weight="800" fill="#d0d1cc">02</text>
+    </g>
+    <g transform="translate(682 284)">
+      <rect width="300" height="184" fill="#111310" stroke="#111310"/>
+      <rect width="300" height="8" fill="#f3ff00"/>
+      <rect x="0" y="8" width="300" height="176" fill="url(#fade)"/>
+      <text x="22" y="53" class="mono micro" fill="#f3ff00">LEVEL 03 / 标尺</text>
+      <text x="22" y="91" font-size="31" font-weight="760" fill="#ffffff">复杂</text>
+      <text x="22" y="121" class="sans small" fill="#d6d8d2">全局系统级重构</text>
+      <text x="22" y="148" class="sans small" fill="#d6d8d2">完整组件与协调动效</text>
+      <text x="278" y="54" text-anchor="end" font-size="40" font-weight="800" fill="#f3ff00">03</text>
+    </g>
+    <g transform="translate(998 284)">
+      <rect width="352" height="184" fill="#ffffff" stroke="#b9bcb5"/>
+      <rect width="352" height="8" fill="#111310"/>
+      <text x="22" y="53" class="mono micro muted">LEVEL 04</text>
+      <text x="22" y="91" font-size="31" font-weight="760" class="ink">极繁</text>
+      <text x="22" y="121" class="sans small muted">逐模式重新导演</text>
+      <text x="22" y="148" class="sans small muted">状态驱动构图与跨场景动效</text>
+      <text x="330" y="54" text-anchor="end" font-size="40" font-weight="800" fill="#d0d1cc">04</text>
+    </g>
+  </g>
+
+  <text x="50" y="522" class="sans micro muted">03 / 复杂档实施标尺 · SIX IMPLEMENTATION AXES</text>
+  <line x1="50" y1="542" x2="1350" y2="542" stroke="#111310" stroke-width="2"/>
+  <g class="sans">
+    <g transform="translate(50 564)">
+      <text y="22" class="label ink">壳层改造</text>
+      <g transform="translate(190 0)"><rect width="112" height="28" fill="#111310"/><rect x="120" width="112" height="28" fill="#111310"/><rect x="240" width="112" height="28" fill="#111310"/><rect x="360" width="112" height="28" fill="#e0e1dc" stroke="#b9bcb5"/></g>
+      <text x="696" y="22" class="body muted">全局系统</text>
+      <text x="930" y="22" class="mono micro muted">SHELL / GLOBAL</text>
+    </g>
+    <g transform="translate(50 608)">
+      <text y="22" class="label ink">舞台层次</text>
+      <g transform="translate(190 0)"><rect width="112" height="28" fill="#111310"/><rect x="120" width="112" height="28" fill="#111310"/><rect x="240" width="112" height="28" fill="#111310"/><rect x="360" width="112" height="28" fill="#e0e1dc" stroke="#b9bcb5"/></g>
+      <text x="696" y="22" class="body muted">2–4 层</text>
+      <text x="930" y="22" class="mono micro muted">STAGE / LAYERED</text>
+    </g>
+    <g transform="translate(50 652)">
+      <text y="22" class="label ink">组件覆盖</text>
+      <g transform="translate(190 0)"><rect width="112" height="28" fill="#111310"/><rect x="120" width="112" height="28" fill="#111310"/><rect x="240" width="112" height="28" fill="#111310"/><rect x="360" width="112" height="28" fill="#e0e1dc" stroke="#b9bcb5"/></g>
+      <text x="696" y="22" class="body muted">完整共享组件</text>
+      <text x="930" y="22" class="mono micro muted">COMPONENT / SYSTEM</text>
+    </g>
+    <g transform="translate(50 696)">
+      <text y="22" class="label ink">状态仪表</text>
+      <g transform="translate(190 0)"><rect width="112" height="28" fill="#111310"/><rect x="120" width="112" height="28" fill="#111310"/><rect x="240" width="112" height="28" fill="#111310"/><rect x="360" width="112" height="28" fill="#e0e1dc" stroke="#b9bcb5"/></g>
+      <text x="696" y="22" class="body muted">系统级真实状态</text>
+      <text x="930" y="22" class="mono micro muted">STATE / TRUTHFUL</text>
+    </g>
+    <g transform="translate(50 740)">
+      <text y="22" class="label ink">动效编排</text>
+      <g transform="translate(190 0)"><rect width="112" height="28" fill="#111310"/><rect x="120" width="112" height="28" fill="#111310"/><rect x="240" width="112" height="28" fill="#111310"/><rect x="360" width="112" height="28" fill="#e0e1dc" stroke="#b9bcb5"/></g>
+      <text x="696" y="22" class="body muted">多组协调动效</text>
+      <text x="930" y="22" class="mono micro muted">MOTION / ORCHESTRATED</text>
+    </g>
+    <g transform="translate(50 784)">
+      <text y="22" class="label ink">响应式</text>
+      <g transform="translate(190 0)"><rect width="112" height="28" fill="#111310"/><rect x="120" width="112" height="28" fill="#111310"/><rect x="240" width="112" height="28" fill="#111310"/><rect x="360" width="112" height="28" fill="#e0e1dc" stroke="#b9bcb5"/></g>
+      <text x="696" y="22" class="body muted">完整重构</text>
+      <text x="930" y="22" class="mono micro muted">RESPONSIVE / RECOMPOSED</text>
+    </g>
+  </g>
+  <rect x="1326" y="542" width="24" height="264" fill="#f3ff00"/>
+  <text x="1338" y="674" text-anchor="middle" class="mono micro ink" transform="rotate(90 1338 674)">DEPTH ≠ CONTENT DENSITY</text>
+</svg>
