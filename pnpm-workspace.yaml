@@ -2,8 +2,10 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  "@google/genai": false
   electron: true
   monaco-editor: false
+  protobufjs: false
 
 minimumReleaseAgeExclude:
   - "@nasti-toolchain/nasti@2.9.0"
