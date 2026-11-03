@@ -10,7 +10,7 @@ import type {
   Version,
 } from "./thread";
 
-export const protocolVersion = 1;
+export const protocolVersion = 2;
 
 export interface Subscription {
   readonly timeline_id: TimelineId;
@@ -74,6 +74,7 @@ export type ServerMessage =
         readonly timeline_id: TimelineId;
         readonly frontier: Version;
         readonly deltas: readonly Delta[];
+        readonly has_more: boolean;
       };
     }
   | {

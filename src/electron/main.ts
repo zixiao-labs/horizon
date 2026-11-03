@@ -1,8 +1,10 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { LocalThreadStore } from "./local-store";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+let threadStore: LocalThreadStore | undefined;
 
 async function createWindow(): Promise<void> {
   const window = new BrowserWindow({
@@ -27,6 +29,7 @@ async function createWindow(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  threadStore = new LocalThreadStore(path.join(app.getPath("userData"), "threads.sqlite"));
   await createWindow();
 
   app.on("activate", async () => {
@@ -34,6 +37,11 @@ app.whenReady().then(async () => {
       await createWindow();
     }
   });
+});
+
+app.on("will-quit", () => {
+  threadStore?.close();
+  threadStore = undefined;
 });
 
 app.on("window-all-closed", () => {

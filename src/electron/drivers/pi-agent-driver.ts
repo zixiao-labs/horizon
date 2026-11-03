@@ -7,6 +7,7 @@ import type {
   Version,
 } from "../../shared/thread";
 import type { AgentDriver, AgentDriverIdentity, ThreadAdvancePort } from "./types";
+import type { ContextUsage } from "../../shared/collaboration";
 
 type PiAgentRuntime = Pick<
   Agent,
@@ -84,6 +85,13 @@ export class PiAgentDriver implements AgentDriver {
   followUp(prompt: string): void {
     this.#assertActive();
     this.#agent.followUp(userMessage(prompt));
+  }
+
+  /** Provider/tokenizer supplies exact counters; UI need not inspect Pi internals. */
+  async recordContextUsage(usage: ContextUsage): Promise<void> {
+    this.#assertActive();
+    if (usage.run_id !== this.runId) throw new Error("Context usage belongs to another run");
+    await this.#commit({ kind: "context_usage", data: usage });
   }
 
   async abort(): Promise<void> {
@@ -164,6 +172,7 @@ export class PiAgentDriver implements AgentDriver {
               operation: "content_appended",
               message_id: messageId,
               content_kind: update.type.replace("_delta", ""),
+              content_index: update.contentIndex,
               content: update.delta,
             },
           },

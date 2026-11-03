@@ -1,3 +1,6 @@
+import type { CollaborationPayload } from "./collaboration";
+import { materialize, type ThreadSnapshot } from "./snapshot";
+
 export type ActorId = string;
 export type BufferId = string;
 export type DriverId = string;
@@ -35,6 +38,7 @@ export interface DeltaContext {
 }
 
 export type DeltaPayload =
+  | CollaborationPayload
   | {
       readonly kind: "thread";
       readonly data:
@@ -133,6 +137,7 @@ export type DeltaPayload =
             readonly operation: "content_appended";
             readonly message_id: MessageId;
             readonly content_kind: string;
+            readonly content_index?: number;
             readonly content: string;
           }
         | {
@@ -238,16 +243,20 @@ export class CausalGraph {
   }
 
   insert(delta: Delta): "inserted" | "already_present" {
+    delta = normalizeDelta(delta);
     const key = deltaKey(delta.id);
     const existing = this.#deltas.get(key);
     if (existing) {
-      if (JSON.stringify(existing) !== JSON.stringify(delta)) {
+      if (canonicalJson(existing) !== canonicalJson(delta)) {
         throw new Error(`Delta ${key} already exists with different contents`);
       }
       return "already_present";
     }
     if (delta.id.actor !== delta.context.actor_id) {
       throw new Error(`Delta ${key} does not match its context actor`);
+    }
+    if (!Number.isSafeInteger(delta.id.sequence) || delta.id.sequence < 1) {
+      throw new Error("Delta sequence must be a positive safe integer");
     }
     const missing = delta.parents.filter((parent) => !this.has(parent));
     if (missing.length > 0) {
@@ -317,32 +326,33 @@ export class CausalGraph {
 
   missingFrom(desired: Version, known: Version): readonly Delta[] {
     const covered = new Set<string>();
-    const collect = (id: DeltaId): void => {
+    const ancestors = [...known];
+    while (ancestors.length) {
+      const id = ancestors.pop()!;
       const key = deltaKey(id);
-      if (covered.has(key)) {
-        return;
-      }
+      if (covered.has(key)) continue;
       covered.add(key);
-      this.get(id)?.parents.forEach(collect);
-    };
-    known.forEach(collect);
+      ancestors.push(...(this.get(id)?.parents ?? []));
+    }
 
     const visited = new Set<string>();
     const result: Delta[] = [];
-    const visit = (id: DeltaId): void => {
+    const pending = desired.map((id) => ({ id, expanded: false })).reverse();
+    while (pending.length) {
+      const { id, expanded } = pending.pop()!;
       const key = deltaKey(id);
-      if (covered.has(key) || visited.has(key)) {
-        return;
-      }
-      visited.add(key);
+      if (covered.has(key)) continue;
       const delta = this.get(id);
-      if (!delta) {
-        return;
+      if (!delta) continue;
+      if (expanded) {
+        result.push(delta);
+        continue;
       }
-      delta.parents.forEach(visit);
-      result.push(delta);
-    };
-    desired.forEach(visit);
+      if (visited.has(key)) continue;
+      visited.add(key);
+      pending.push({ id, expanded: true });
+      pending.push(...delta.parents.map((parent) => ({ id: parent, expanded: false })).reverse());
+    }
     return result;
   }
 }
@@ -364,12 +374,23 @@ export class ThreadReplica {
     return this.#graph;
   }
 
+  clone(): ThreadReplica {
+    const replica = new ThreadReplica(this.threadId);
+    replica.#graph = this.#graph.clone();
+    replica.#timelines = new Map(this.#timelines);
+    return replica;
+  }
+
   timeline(id: TimelineId): Timeline | undefined {
     return this.#timelines.get(id);
   }
 
   currentVersion(id: TimelineId): Version {
     return this.timeline(id)?.frontier ?? [];
+  }
+
+  snapshot(version: Version): ThreadSnapshot {
+    return materialize(this.#graph, version);
   }
 
   advance(batch: DriverBatch): AdvanceOutcome {
@@ -401,6 +422,7 @@ export class ThreadReplica {
 
     const current = this.currentVersion(batch.timeline_id);
     const frontier = staged.join(current, batch.next);
+    materialize(staged, frontier);
     const previous = this.timeline(batch.timeline_id);
     this.#graph = staged;
     this.#timelines.set(batch.timeline_id, {
@@ -423,6 +445,7 @@ export class ThreadReplica {
     staged.validateVersion(update.frontier);
     const previous = this.timeline(update.timeline_id);
     const frontier = staged.join(previous?.frontier ?? [], update.frontier);
+    materialize(staged, frontier);
     this.#graph = staged;
     this.#timelines.set(update.timeline_id, {
       id: update.timeline_id,
@@ -436,7 +459,16 @@ export class ThreadReplica {
 
 export function canonicalVersion(ids: Version): Version {
   const unique = new Map(ids.map((id) => [deltaKey(id), id]));
-  return [...unique.values()].sort((left, right) => deltaKey(left).localeCompare(deltaKey(right)));
+  return [...unique.values()].sort(compareDeltaIds);
+}
+
+/** Matches Rust's (UUID bytes, numeric sequence) order, independent of locale. */
+export function compareDeltaIds(left: DeltaId, right: DeltaId): number {
+  return compareStrings(left.actor, right.actor) || left.sequence - right.sequence;
+}
+
+export function compareStrings(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 export function deltaKey(id: DeltaId): string {
@@ -445,4 +477,76 @@ export function deltaKey(id: DeltaId): string {
 
 function sameDelta(left: DeltaId, right: DeltaId): boolean {
   return left.actor === right.actor && left.sequence === right.sequence;
+}
+
+/** JSON object order is not significant; application arrays still are. */
+export function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_key, item: unknown) => {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      return Object.fromEntries(Object.entries(item).sort(([a], [b]) => compareStrings(a, b)));
+    }
+    return item;
+  });
+}
+
+function normalizeDelta(delta: Delta): Delta {
+  let payload = delta.payload;
+  switch (payload.kind) {
+    case "text":
+      if (payload.data.operation === "edited")
+        payload = {
+          ...payload,
+          data: { ...payload.data, based_on: canonicalVersion(payload.data.based_on) },
+        };
+      break;
+    case "map":
+      if (payload.data.operation === "remove")
+        payload = {
+          ...payload,
+          data: { ...payload.data, observed: canonicalVersion(payload.data.observed) },
+        };
+      break;
+    case "comment":
+      if (payload.data.operation === "created")
+        payload = {
+          ...payload,
+          data: {
+            ...payload.data,
+            anchor: {
+              ...payload.data.anchor,
+              version: canonicalVersion(payload.data.anchor.version),
+            },
+          },
+        };
+      break;
+    case "review":
+      payload =
+        payload.data.operation === "verdict"
+          ? {
+              ...payload,
+              data: {
+                ...payload.data,
+                worktrees: payload.data.worktrees.map((tree) => ({
+                  ...tree,
+                  version: canonicalVersion(tree.version),
+                })),
+              },
+            }
+          : {
+              ...payload,
+              data: { ...payload.data, version: canonicalVersion(payload.data.version) },
+            };
+      break;
+    case "edit_artifact":
+      payload = {
+        ...payload,
+        data: {
+          ...payload.data,
+          before: canonicalVersion(payload.data.before),
+          after: canonicalVersion(payload.data.after),
+        },
+      };
+      break;
+  }
+  return { ...delta, parents: canonicalVersion(delta.parents), payload };
 }

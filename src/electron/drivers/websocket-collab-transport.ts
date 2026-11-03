@@ -12,7 +12,7 @@ export type WebSocketFactory = (url: string) => WebSocket;
 
 export class WebSocketCollabTransport implements CollabTransport {
   readonly #url: string;
-  readonly #subscriptions: readonly Subscription[];
+  readonly #subscriptions: readonly Subscription[] | (() => readonly Subscription[]);
   readonly #factory: WebSocketFactory;
   readonly #listeners = new Set<(update: RemoteAdvance) => void>();
   readonly #pending = new Map<
@@ -27,7 +27,7 @@ export class WebSocketCollabTransport implements CollabTransport {
 
   constructor(
     url: string,
-    subscriptions: readonly Subscription[],
+    subscriptions: readonly Subscription[] | (() => readonly Subscription[]),
     factory: WebSocketFactory = (address) => new WebSocket(address),
   ) {
     this.#url = url;
@@ -43,15 +43,20 @@ export class WebSocketCollabTransport implements CollabTransport {
       const socket = this.#factory(this.#url);
       this.#socket = socket;
       socket.addEventListener("open", () => {
+        if (this.#socket !== socket) return;
         this.#send({
           type: "hello",
           data: {
             protocol_version: protocolVersion,
-            subscriptions: this.#subscriptions,
+            subscriptions:
+              typeof this.#subscriptions === "function"
+                ? this.#subscriptions()
+                : this.#subscriptions,
           },
         });
       });
       socket.addEventListener("message", (event) => {
+        if (this.#socket !== socket) return;
         try {
           if (typeof event.data !== "string") {
             throw new Error("Horizon sync protocol only accepts text frames");
@@ -69,18 +74,24 @@ export class WebSocketCollabTransport implements CollabTransport {
           this.#handle(message);
         } catch (error) {
           reject(error);
+          this.#rejectPending(error instanceof Error ? error : new Error(String(error)));
           void this.close();
         }
       });
       socket.addEventListener("error", () => {
-        reject(new Error("Horizon collaboration socket failed"));
+        if (this.#socket !== socket) return;
+        const error = new Error("Horizon collaboration socket failed");
+        reject(error);
+        this.#rejectPending(error);
+        void this.close();
       });
       socket.addEventListener("close", () => {
+        if (this.#socket !== socket) return;
         const error = new Error("Horizon collaboration socket closed");
-        for (const pending of this.#pending.values()) {
-          pending.reject(error);
-        }
-        this.#pending.clear();
+        reject(error);
+        this.#socket = undefined;
+        this.#connectPromise = undefined;
+        this.#rejectPending(error);
       });
     });
     return this.#connectPromise;
@@ -91,32 +102,52 @@ export class WebSocketCollabTransport implements CollabTransport {
     return () => this.#listeners.delete(listener);
   }
 
-  async advance(batch: DriverBatch): Promise<AdvanceOutcome> {
+  async advance(
+    batch: DriverBatch,
+    requestId: string = crypto.randomUUID(),
+  ): Promise<AdvanceOutcome> {
     await this.connect();
-    const requestId = crypto.randomUUID();
+    if (this.#pending.has(requestId)) throw new Error("Request is already in flight");
     const response = new Promise<AdvanceOutcome>((resolve, reject) => {
       this.#pending.set(requestId, { resolve, reject });
     });
-    this.#send({
-      type: "advance",
-      data: {
-        request_id: requestId,
-        batch,
-      },
-    });
+    try {
+      this.#send({ type: "advance", data: { request_id: requestId, batch } });
+    } catch (error) {
+      this.#pending
+        .get(requestId)
+        ?.reject(error instanceof Error ? error : new Error(String(error)));
+      this.#pending.delete(requestId);
+    }
     return response;
   }
 
   async close(): Promise<void> {
+    this.#rejectPending(new Error("Horizon collaboration socket closed"));
     this.#socket?.close();
     this.#socket = undefined;
     this.#connectPromise = undefined;
+  }
+
+  #rejectPending(error: Error): void {
+    for (const pending of this.#pending.values()) pending.reject(error);
+    this.#pending.clear();
   }
 
   #handle(message: ServerMessage): void {
     switch (message.type) {
       case "deltas":
         this.#listeners.forEach((listener) => listener(message.data));
+        if (message.data.has_more) {
+          this.#send({
+            type: "fetch",
+            data: {
+              request_id: crypto.randomUUID(),
+              timeline_id: message.data.timeline_id,
+              known: message.data.frontier,
+            },
+          });
+        }
         return;
       case "advanced": {
         const pending = this.#pending.get(message.data.request_id);

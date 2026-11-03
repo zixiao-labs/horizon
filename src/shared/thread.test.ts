@@ -72,4 +72,27 @@ describe("ThreadReplica", () => {
 
     expect(thread.timeline(timelineId)?.frontier).toEqual([left.id, right.id]);
   });
+
+  it("accepts a serde echo with reordered JSON keys and frontier dots", () => {
+    const first = delta(1, []);
+    const second = delta(2, []);
+    const merge = delta(3, [second.id, first.id]);
+    const thread = new ThreadReplica(threadId);
+    thread.advance(batch([], [merge.id], [first, second, merge]));
+    const echo = {
+      payload: merge.payload,
+      context: {
+        identity_id: identityId,
+        driver_kind: "agent" as const,
+        driver_id: driverId,
+        actor_id: "actor",
+      },
+      parents: [first.id, second.id],
+      id: merge.id,
+    };
+    expect(
+      thread.applyRemote({ timeline_id: timelineId, frontier: [merge.id], deltas: [echo] })
+        .accepted,
+    ).toEqual([]);
+  });
 });
