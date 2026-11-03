@@ -13,6 +13,7 @@ import { LocalThreadStore } from "../local-store";
 import { CollabDriver, type CollabTransport } from "./collab-driver";
 import { WebSocketCollabTransport } from "./websocket-collab-transport";
 import { AgentEditRecorder } from "./edit-recorder";
+import { ThreadAccessClient } from "./thread-access-client";
 
 const integration = process.env.HORIZON_TEST_SYNC_URL ? it : it.skip;
 
@@ -26,6 +27,7 @@ integration(
       actor = crypto.randomUUID();
     const driverId = crypto.randomUUID(),
       messageId = crypto.randomUUID();
+    await new ThreadAccessClient(baseUrl).create(threadId);
     const url = `${baseUrl.replace(/^http/, "ws")}/threads/${threadId}/sync`;
     const directory = mkdtempSync(path.join(tmpdir(), "horizon-sync-"));
     const filename = path.join(directory, "local.sqlite");
@@ -219,7 +221,12 @@ integration(
       collab = new CollabDriver(new ThreadReplica(threadId), retry, store);
       await collab.start();
       expect(store.pending(threadId).length).toBe(0);
-      const receiver = new WebSocketCollabTransport(url, [{ timeline_id: timelineId, known: [] }]);
+      const observerUrl = process.env.HORIZON_TEST_SYNC_URL_2
+        ? `${process.env.HORIZON_TEST_SYNC_URL_2.replace(/^http/, "ws")}/threads/${threadId}/sync`
+        : url;
+      const receiver = new WebSocketCollabTransport(observerUrl, [
+        { timeline_id: timelineId, known: [] },
+      ]);
       transports.push(receiver);
       const caughtUp = new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error("catch-up timed out")), 10_000);
@@ -241,6 +248,38 @@ integration(
       expect(snapshot.comments.get("review-comment")?.anchor.quote).toBe("old");
       expect(snapshot.edits.length).toBe(1);
       expect(snapshot.usage.get(runId)?.used_tokens).toBe(100);
+
+      // The observer stays connected to the other instance. A new local SQLite
+      // commit must arrive without reconnecting or explicitly fetching.
+      const nextSequence = sequence + 1;
+      const live = new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("live relay timed out")), 10_000);
+        const unsubscribe = receiver.onRemoteAdvance((update) => {
+          if (update.frontier.some((id) => id.actor === actor && id.sequence === nextSequence)) {
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+      append({
+        kind: "context_usage",
+        data: {
+          run_id: runId,
+          model: "test-model",
+          context_window: 1000,
+          used_tokens: 101,
+          automatic_compaction: false,
+          breakdown: [],
+        },
+      });
+      await collab.flush();
+      await live;
+      const liveReplica = second.load(threadId);
+      expect(liveReplica.graph.size).toBe(graphSize + 1);
+      expect(
+        liveReplica.snapshot(liveReplica.currentVersion(timelineId)).usage.get(runId)?.used_tokens,
+      ).toBe(101);
     } finally {
       await collab?.stop();
       await observer?.stop();

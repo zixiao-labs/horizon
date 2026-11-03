@@ -30,6 +30,29 @@ const collab = new CollabDriver(store.load(threadId), transport, store);
 await collab.start();
 ```
 
+In authenticated deployments first provision a newly created thread using
+`ThreadAccessClient.create(threadId)`. It is an explicit HTTP operation, not a
+side effect of connecting or replaying the outbox:
+
+```ts
+const access = new ThreadAccessClient(serverUrl, authenticatedFetch);
+await access.create(threadId); // Idempotent for this thread's existing owner.
+await access.grant(threadId, collaboratorIdentityId, "writer"); // Or "reader".
+const members = await access.members(threadId);
+await access.revoke(threadId, collaboratorIdentityId);
+```
+
+Supply a fetch implementation carrying the same signed session as the sync
+socket; Node's default fetch does not share Electron's cookie jar automatically.
+The owner alone can list/change membership. Readers can catch up and receive
+live content, writers can also advance; the owner cannot be removed or changed
+through this API. A thread includes all of its timelines/worktrees. Revocation
+blocks subsequent reads/writes, closes an existing connection and preserves
+unsent local outbox entries; it does not erase data already held by a peer.
+The anonymous development mode bypasses these controls and is only for local
+testing. Existing pre-ACL server threads require explicit administrator ownership
+assignment; connecting never claims them.
+
 Use the same store/advance port for all drivers for a thread. Each awaited Pi
 streaming event commits locally before returning. While collaboration is running,
 new local batches trigger outbox flushing. Disconnections retain pending batches;
@@ -78,6 +101,12 @@ The B+ store currently backs register/map checkpoints; run-coalesced text
 indexing, checkpoint-accelerated replay and causally safe log pruning remain
 performance work. A checkpoint is not permission to prune the operation log.
 
+The matching server supports cross-instance live delivery through PostgreSQL
+notifications plus five-second durable revision reconciliation. Sync v2 wire
+messages and local SQLite schema are unchanged by the membership HTTP API.
+Binary data transfer, causal log pruning and automatic checkout/Git management
+remain separate work; no filesystem or landing action happens on approval.
+
 Logical checkout metadata is ready; creating/syncing on-disk checkouts,
 Git rebasing/landing, binary files, attachment transfer and renderer/IPC UI
 integration are not implemented here. No Monaco change is needed for these
@@ -97,6 +126,14 @@ For the real SQLite → WebSocket → Postgres test, start the matching server w
 
 ```sh
 HORIZON_TEST_SYNC_URL=http://127.0.0.1:8787 pnpm test
+```
+
+To also check catch-up and subsequent live delivery through a second service
+process sharing the same disposable Postgres:
+
+```sh
+HORIZON_TEST_SYNC_URL=http://127.0.0.1:8787 \
+HORIZON_TEST_SYNC_URL_2=http://127.0.0.1:8788 pnpm check
 ```
 
 The integration test simulates losing an acknowledgment **after** the server
