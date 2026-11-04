@@ -4,7 +4,7 @@ packages:
 allowBuilds:
   "@google/genai": false
   electron: true
-  monaco-editor: false
+  "monaco-editor@https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/c2a87f79ccef2f4d3fe7b5879dd59ddd55814a48": true
   protobufjs: false
 
 minimumReleaseAgeExclude:

@@ -7,6 +7,8 @@ import {
   type Version,
 } from "./thread";
 import type { ByteRange } from "./collaboration";
+import { byteLength, lastFragmentId, sliceFragment, TextIndex } from "./text-index";
+export { byteLength } from "./text-index";
 
 export interface TextFragment {
   readonly id: string;
@@ -20,12 +22,19 @@ export interface TextFragment {
 
 export interface TextSnapshot {
   readonly text: string;
-  /** Includes tombstones so historical positions remain resolvable. */
+  /** Contiguous source runs, including tombstones. IDs address the first scalar. */
   readonly fragments: readonly TextFragment[];
 }
 
-const encoder = new TextEncoder();
-export const byteLength = (text: string): number => encoder.encode(text).length;
+const indexes = new WeakMap<TextSnapshot, TextIndex>();
+export function textIndex(snapshot: TextSnapshot): TextIndex {
+  let index = indexes.get(snapshot);
+  if (!index) {
+    index = new TextIndex(snapshot.fragments);
+    indexes.set(snapshot, index);
+  }
+  return index;
+}
 
 export function orderedDeltas(
   graph: CausalGraph,
@@ -48,27 +57,7 @@ export function orderedDeltas(
 }
 
 export function selectFragments(snapshot: TextSnapshot, range: ByteRange): readonly TextFragment[] {
-  if (
-    !Number.isSafeInteger(range.start) ||
-    !Number.isSafeInteger(range.end) ||
-    range.start < 0 ||
-    range.end < range.start
-  ) {
-    throw new Error("Invalid UTF-8 byte range");
-  }
-  let offset = 0;
-  const boundaries = new Set([0]);
-  const selected: TextFragment[] = [];
-  for (const fragment of snapshot.fragments) {
-    if (fragment.deleted) continue;
-    if (offset >= range.start && offset < range.end) selected.push(fragment);
-    offset += byteLength(fragment.text);
-    boundaries.add(offset);
-  }
-  if (!boundaries.has(range.start) || !boundaries.has(range.end)) {
-    throw new Error("Range is outside the buffer or splits a UTF-8 scalar");
-  }
-  return selected;
+  return textIndex(snapshot).select(range);
 }
 
 function orderFragments(nodes: ReadonlyMap<string, TextFragment>): TextSnapshot {
@@ -90,7 +79,7 @@ function orderFragments(nodes: ReadonlyMap<string, TextFragment>): TextSnapshot 
   while (pending.length) {
     const node = pending.pop()!;
     fragments.push(node);
-    pending.push(...[...(children.get(node.id) ?? [])].reverse());
+    pending.push(...[...(children.get(lastFragmentId(node)) ?? [])].reverse());
   }
   return {
     text: fragments
@@ -101,8 +90,8 @@ function orderFragments(nodes: ReadonlyMap<string, TextFragment>): TextSnapshot 
   };
 }
 
-/** Reference RGA fragment index. Stable IDs are (creating delta, UTF-8 offset).
- * Scalar fragments favor correctness over run coalescing; wire edits remain ranges.
+/** RGA source runs. Splitting never changes (creating delta, byte offset) IDs.
+ * Insertions split only at their predecessor; deletes split observed source spans.
  */
 export class TextMaterializer {
   readonly #graph: CausalGraph;
@@ -118,6 +107,19 @@ export class TextMaterializer {
     if (cached) return cached;
     const { deltas, heights } = orderedDeltas(this.#graph, version);
     const nodes = new Map<string, TextFragment>();
+    const split = (origin: DeltaId, offset: number) => {
+      for (const node of nodes.values()) {
+        const end = node.offset + byteLength(node.text);
+        if (deltaKey(node.origin) !== deltaKey(origin) || offset <= node.offset || offset >= end)
+          continue;
+        const cut = offset - node.offset;
+        const first = sliceFragment(node, 0, cut);
+        const rest = sliceFragment(node, cut, end - node.offset);
+        nodes.set(first.id, first);
+        nodes.set(rest.id, rest);
+        break;
+      }
+    };
     let created = false;
     for (const delta of deltas) {
       if (delta.payload.kind !== "text" || delta.payload.data.buffer_id !== bufferId) continue;
@@ -132,32 +134,36 @@ export class TextMaterializer {
           throw new Error("Text base is not in the edit's causal past");
         const base = this.at(bufferId, data.based_on);
         const removed = selectFragments(base, data.range);
-        let offset = 0;
-        for (const fragment of base.fragments) {
-          if (fragment.deleted) continue;
-          if (offset < data.range.start) left = fragment.id;
-          offset += byteLength(fragment.text);
+        const predecessor = textIndex(base).before(data.range.start);
+        if (predecessor) {
+          left = lastFragmentId(predecessor);
+          split(predecessor.origin, predecessor.offset + byteLength(predecessor.text));
         }
         for (const fragment of removed) {
-          const current = nodes.get(fragment.id);
-          if (!current) throw new Error("Text edit references an absent fragment");
-          nodes.set(fragment.id, { ...current, deleted: true });
+          const end = fragment.offset + byteLength(fragment.text);
+          split(fragment.origin, fragment.offset);
+          split(fragment.origin, end);
+          for (const node of nodes.values()) {
+            if (
+              deltaKey(node.origin) === deltaKey(fragment.origin) &&
+              node.offset >= fragment.offset &&
+              node.offset < end
+            )
+              nodes.set(node.id, { ...node, deleted: true });
+          }
         }
       }
-      let offset = 0;
-      for (const text of data.text) {
-        const id = `${deltaKey(delta.id)}@${offset}`;
+      if (data.text) {
+        const id = `${deltaKey(delta.id)}@0`;
         nodes.set(id, {
           id,
           origin: delta.id,
-          offset,
-          text,
+          offset: 0,
+          text: data.text,
           left,
           height: heights.get(deltaKey(delta.id))!,
           deleted: false,
         });
-        left = id;
-        offset += byteLength(text);
       }
     }
     if (!created) throw new Error(`Unknown buffer ${bufferId}`);
@@ -168,18 +174,17 @@ export class TextMaterializer {
 }
 
 export function appendFragments(delta: Delta, text: string): readonly TextFragment[] {
-  let offset = 0;
-  return [...text].map((character) => {
-    const fragment: TextFragment = {
-      id: `${deltaKey(delta.id)}@${offset}`,
-      origin: delta.id,
-      offset,
-      text: character,
-      left: null,
-      height: 0,
-      deleted: false,
-    };
-    offset += byteLength(character);
-    return fragment;
-  });
+  return text
+    ? [
+        {
+          id: `${deltaKey(delta.id)}@0`,
+          origin: delta.id,
+          offset: 0,
+          text,
+          left: null,
+          height: 0,
+          deleted: false,
+        },
+      ]
+    : [];
 }

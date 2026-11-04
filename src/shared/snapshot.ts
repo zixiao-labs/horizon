@@ -1,6 +1,7 @@
 import {
   canonicalVersion,
   compareStrings,
+  deltaKey,
   type CausalGraph,
   type Delta,
   type JsonValue,
@@ -20,6 +21,7 @@ import {
   byteLength,
   orderedDeltas,
   selectFragments,
+  textIndex,
   TextMaterializer,
   type TextFragment,
   type TextSnapshot,
@@ -422,9 +424,14 @@ export function resolveAnchor(
   readonly deleted: boolean;
 } {
   const historical = anchorBuffer(materialize(graph, anchor.version), anchor);
-  const selected = new Set(
-    selectFragments(historical, anchor.range).map((fragment) => fragment.id),
-  );
+  const selected = new Map<string, { start: number; end: number }[]>();
+  for (const fragment of selectFragments(historical, anchor.range)) {
+    const key = deltaKey(fragment.origin);
+    const spans = selected.get(key) ?? [];
+    spans.push({ start: fragment.offset, end: fragment.offset + byteLength(fragment.text) });
+    selected.set(key, spans);
+  }
+  for (const spans of selected.values()) spans.sort((a, b) => a.start - b.start);
   const latestSnapshot = materialize(graph, next);
   const target = anchor.target;
   const latest =
@@ -440,27 +447,48 @@ export function resolveAnchor(
   for (const fragment of latest?.fragments ?? []) {
     if (fragment.deleted) continue;
     const end = offset + byteLength(fragment.text);
-    if (selected.has(fragment.id)) {
+    const sourceEnd = fragment.offset + byteLength(fragment.text);
+    const spans = selected.get(deltaKey(fragment.origin)) ?? [];
+    let low = 0;
+    let high = spans.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (spans[middle]!.end <= fragment.offset) low = middle + 1;
+      else high = middle;
+    }
+    for (let index = low; index < spans.length; index++) {
+      const source = spans[index]!;
+      if (source.start >= sourceEnd) break;
+      const start = Math.max(source.start, fragment.offset);
+      const stop = Math.min(source.end, sourceEnd);
+      if (start >= stop) continue;
+      const mapped = {
+        start: offset + start - fragment.offset,
+        end: offset + stop - fragment.offset,
+      };
       const previous = ranges[ranges.length - 1];
-      if (previous?.end === offset) previous.end = end;
-      else ranges.push({ start: offset, end });
+      if (previous?.end === mapped.start) previous.end = mapped.end;
+      else ranges.push(mapped);
     }
     offset = end;
   }
-  // Point comments track the preceding source scalar, including its tombstone.
+  // Point comments track the preceding source endpoint, including its tombstone.
   if (anchor.range.start === anchor.range.end && latest) {
-    let historicalOffset = 0;
-    let left: string | undefined;
-    for (const fragment of historical.fragments) {
-      if (fragment.deleted) continue;
-      if (historicalOffset < anchor.range.start) left = fragment.id;
-      historicalOffset += byteLength(fragment.text);
-    }
+    const left = textIndex(historical).before(anchor.range.start);
+    const endpoint = left ? left.offset + byteLength(left.text) : 0;
     let point = 0;
     for (const fragment of latest.fragments) {
       if (!left) break;
+      if (
+        fragment.origin.actor === left.origin.actor &&
+        fragment.origin.sequence === left.origin.sequence &&
+        fragment.offset < endpoint &&
+        fragment.offset + byteLength(fragment.text) >= endpoint
+      ) {
+        if (!fragment.deleted) point += endpoint - fragment.offset;
+        break;
+      }
       if (!fragment.deleted) point += byteLength(fragment.text);
-      if (fragment.id === left) break;
     }
     ranges.push({ start: point, end: point });
   }

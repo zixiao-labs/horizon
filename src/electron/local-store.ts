@@ -4,6 +4,7 @@ import {
   ThreadReplica,
   type AdvanceOutcome,
   type DriverBatch,
+  type ReplicaCheckpoint,
   type RemoteAdvance,
   type Version,
 } from "../shared/thread";
@@ -41,6 +42,11 @@ export class LocalThreadStore {
         thread_id TEXT NOT NULL, name TEXT NOT NULL, version TEXT NOT NULL, roots TEXT NOT NULL,
         PRIMARY KEY(thread_id, name)
       );
+      CREATE TABLE IF NOT EXISTS replica_checkpoints(
+        thread_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL,
+        payload TEXT NOT NULL, hash TEXT NOT NULL
+      );
+      INSERT OR IGNORE INTO local_schema VALUES(2);
     `);
   }
 
@@ -50,8 +56,28 @@ export class LocalThreadStore {
 
   load(threadId: string): ThreadReplica {
     const cached = this.#replicas.get(threadId);
-    const replica = cached?.replica.clone() ?? new ThreadReplica(threadId);
+    let replica = cached?.replica.clone() ?? new ThreadReplica(threadId);
     let sequence = cached?.sequence ?? 0;
+    if (!cached) {
+      const row = this.#db
+        .prepare("SELECT sequence, payload, hash FROM replica_checkpoints WHERE thread_id = ?")
+        .get(threadId);
+      if (row) {
+        try {
+          const payload = String(row.payload);
+          const cursor = Number(row.sequence);
+          if (checkpointHash(cursor, payload) !== row.hash)
+            throw new Error("Corrupt replica checkpoint");
+          const checkpoint = JSON.parse(payload) as ReplicaCheckpoint;
+          if (checkpoint.thread_id !== threadId) throw new Error("Checkpoint thread mismatch");
+          replica = ThreadReplica.fromCheckpoint(checkpoint);
+          sequence = cursor;
+        } catch {
+          // A derived cache must never make intact authoritative history unreadable.
+          replica = new ThreadReplica(threadId);
+        }
+      }
+    }
     for (const row of this.#db
       .prepare(
         "SELECT sequence, kind, payload FROM thread_events WHERE thread_id = ? AND sequence > ? ORDER BY sequence",
@@ -192,6 +218,21 @@ export class LocalThreadStore {
     const snapshot = this.load(threadId).snapshot(version);
     const roots = [this.saveTree(snapshot.registers), this.saveTree(snapshot.maps)];
     this.pin(threadId, name, version, roots);
+    this.checkpointReplay(threadId);
+  }
+
+  /** Atomically capture all timelines at the current journal cursor, not only a pin. */
+  checkpointReplay(threadId: string): void {
+    this.#transaction(() => {
+      const replica = this.load(threadId);
+      const sequence = this.#replicas.get(threadId)!.sequence;
+      const payload = JSON.stringify(replica.checkpoint());
+      this.#db
+        .prepare(
+          "INSERT INTO replica_checkpoints VALUES(?, ?, ?, ?) ON CONFLICT(thread_id) DO UPDATE SET sequence = excluded.sequence, payload = excluded.payload, hash = excluded.hash",
+        )
+        .run(threadId, sequence, payload, checkpointHash(sequence, payload));
+    });
   }
 
   pinned(threadId: string, name: string): Version | undefined {
@@ -243,6 +284,10 @@ export class LocalThreadStore {
       throw error;
     }
   }
+}
+
+function checkpointHash(sequence: number, payload: string): string {
+  return createHash("sha256").update(`${sequence}\n${payload}`).digest("hex");
 }
 
 /** A shared local advance port for AgentDriver and user/collaboration edits. */

@@ -1,6 +1,25 @@
 import type { ThreadSnapshot, FileSnapshot } from "./snapshot";
 import { canonicalJson, compareStrings, type Version } from "./thread";
 import type { EditArtifact } from "./collaboration";
+import { byteLength, type TextSnapshot } from "./text-crdt";
+
+/** Run boundaries are an index detail, not an edit or a new source identity. */
+function sourceSignature(snapshot: TextSnapshot | undefined): string {
+  const spans: { origin: string; start: number; end: number; deleted: boolean }[] = [];
+  for (const fragment of snapshot?.fragments ?? []) {
+    const origin = canonicalJson(fragment.origin);
+    const end = fragment.offset + byteLength(fragment.text);
+    const previous = spans[spans.length - 1];
+    if (
+      previous?.origin === origin &&
+      previous.end === fragment.offset &&
+      previous.deleted === fragment.deleted
+    )
+      previous.end = end;
+    else spans.push({ origin, start: fragment.offset, end, deleted: fragment.deleted });
+  }
+  return canonicalJson(spans);
+}
 
 export interface DiffLine {
   readonly kind: "context" | "removed" | "added";
@@ -163,7 +182,7 @@ export function isFileSeen(
   const newFile = snapshot.worktrees.get(worktreeId)?.files.get(path);
   if (!oldFile || !newFile || canonicalJson(oldFile) !== canonicalJson(newFile)) return false;
   return (
-    canonicalJson(historical.buffers.get(oldFile.buffer_id)?.fragments) ===
-    canonicalJson(snapshot.buffers.get(newFile.buffer_id)?.fragments)
+    sourceSignature(historical.buffers.get(oldFile.buffer_id)) ===
+    sourceSignature(snapshot.buffers.get(newFile.buffer_id))
   );
 }

@@ -189,6 +189,34 @@ integration(
           breakdown: [{ category: "messages", bytes: 10, tokens: 5 }],
         },
       });
+      const unicodeBufferId = crypto.randomUUID();
+      append({
+        kind: "text",
+        data: { operation: "created", buffer_id: unicodeBufferId, text: "a🙂你c" },
+      });
+      const unicodeBase = previous;
+      append({
+        kind: "text",
+        data: {
+          operation: "edited",
+          buffer_id: unicodeBufferId,
+          based_on: unicodeBase,
+          range: { start: 1, end: 5 },
+          text: "XYZ",
+        },
+      });
+      // A later edit still addresses the original source, not the shifted bytes.
+      append({
+        kind: "text",
+        data: {
+          operation: "edited",
+          buffer_id: unicodeBufferId,
+          based_on: unicodeBase,
+          range: { start: 5, end: 8 },
+          text: "",
+        },
+      });
+      store.checkpointReplay(threadId);
       const pendingCount = store.pending(threadId).length;
       const graphSize = store.load(threadId).graph.size;
       const first = new WebSocketCollabTransport(url, [{ timeline_id: timelineId, known: [] }]);
@@ -245,6 +273,7 @@ integration(
       const snapshot = recovered.snapshot(recovered.currentVersion(timelineId));
       expect(snapshot.transcript.text).toBe("你好🙂");
       expect(snapshot.buffers.get(bufferId)?.text).toBe("new\n");
+      expect(snapshot.buffers.get(unicodeBufferId)?.text).toBe("aXYZc");
       expect(snapshot.comments.get("review-comment")?.anchor.quote).toBe("old");
       expect(snapshot.edits.length).toBe(1);
       expect(snapshot.usage.get(runId)?.used_tokens).toBe(100);

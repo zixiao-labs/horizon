@@ -333,6 +333,18 @@ describe("versioned materialization", () => {
     expect(isFileSeen(current, "person", "tree", "file.ts", at)).toBe(true);
     expect(isFileSeen(current, "other", "tree", "file.ts", at)).toBe(false);
     expect(current.usage.get("run")?.breakdown[0]?.bytes).toBe(2048);
+    const noop = change("noop", 1, [usage.id], {
+      kind: "text",
+      data: {
+        operation: "edited",
+        buffer_id: "buffer",
+        based_on: [usage.id],
+        range: { start: 1, end: 1 },
+        text: "",
+      },
+    });
+    apply(replica, noop);
+    expect(isFileSeen(replica.snapshot([noop.id]), "person", "tree", "file.ts", at)).toBe(true);
     const replace = change("a", 7, [usage.id], {
       kind: "text",
       data: {

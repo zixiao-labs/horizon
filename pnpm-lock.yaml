@@ -185,8 +185,8 @@ importers:
         specifier: 3.14.24
         version: 3.14.24(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       monaco-editor:
-        specifier: git://github.com/zixiao-labs/monaco-editor.git
-        version: https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/d01a5baa11aac588a784641f2ac31d38345ef473
+        specifier: git+https://github.com/zixiao-labs/monaco-editor.git#c2a87f79ccef2f4d3fe7b5879dd59ddd55814a48
+        version: https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/c2a87f79ccef2f4d3fe7b5879dd59ddd55814a48
       react:
         specifier: 19.3.1
         version: 19.3.1
@@ -2216,8 +2216,8 @@ packages:
     resolution: {integrity: sha512-Lbgzdk0h4juoQ9fCKXW4by0UJqj+nOOrI9MJ1sSj4nI8aI2eo1qmvQEie4VD1glsS250n15LsWsYtCugiStS5A==}
     engines: {node: '>=18'}
 
-  monaco-editor@https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/d01a5baa11aac588a784641f2ac31d38345ef473:
-    resolution: {gitHosted: true, integrity: sha512-zB2Uvvtx5Dd6dvfQAe1x/7gd6GoZ+63DVvIoC7KkH7o6kmRvH/pS+gC1yKkLV5pwA7WUU4Q5uI8v1dHgmKZioQ==, tarball: https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/d01a5baa11aac588a784641f2ac31d38345ef473}
+  monaco-editor@https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/c2a87f79ccef2f4d3fe7b5879dd59ddd55814a48:
+    resolution: {gitHosted: true, integrity: sha512-0LkWnLz0uBYaT9MAHP5NThV4mCrrdheNt4pnCiypQo7QnaHJjGD87Irq45ypAiIv3GoBdHr7/lvTOCCLBHn12g==, tarball: https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/c2a87f79ccef2f4d3fe7b5879dd59ddd55814a48}
     version: 0.57.0
 
   mrmime@2.0.1:
@@ -4417,7 +4417,7 @@ snapshots:
     dependencies:
       mime-db: 1.54.0
 
-  monaco-editor@https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/d01a5baa11aac588a784641f2ac31d38345ef473: {}
+  monaco-editor@https://codeload.github.com/zixiao-labs/monaco-editor/tar.gz/c2a87f79ccef2f4d3fe7b5879dd59ddd55814a48: {}
 
   mrmime@2.0.1: {}
 

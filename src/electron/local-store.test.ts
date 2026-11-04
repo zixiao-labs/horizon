@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@lightning-js/lightning";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { LocalThreadStore } from "./local-store";
 import { PersistentTree } from "../shared/persistent-tree";
@@ -55,6 +56,59 @@ const first: DriverBatch = {
 };
 
 describe("local durable data", () => {
+  it("restores all timelines from a checkpoint, replays only its suffix and falls back on corruption", () => {
+    const directory = mkdtempSync(path.join(tmpdir(), "horizon-checkpoint-"));
+    const filename = path.join(directory, "local.sqlite");
+    let store = new LocalThreadStore(filename);
+    const original = ThreadReplica.prototype.advance;
+    let replayed = 0;
+    try {
+      store.append(first, "first");
+      store.append({ ...first, timeline_id: "fork", timeline_label: "review" }, "fork");
+      store.receive("thread", { timeline_id: "remote", frontier: first.next, deltas: [] });
+      store.checkpoint("thread", "pin", first.next);
+      store.append({ ...first, timeline_id: "suffix" }, "suffix");
+      store.acknowledge("thread", "fork");
+      store.close();
+      ThreadReplica.prototype.advance = function (batch) {
+        replayed++;
+        return original.call(this, batch);
+      };
+      store = new LocalThreadStore(filename);
+      const restored = store.load("thread");
+      expect(replayed).toBe(1);
+      expect(restored.timeline("fork")?.label).toBe("review");
+      expect(restored.currentVersion("remote")).toEqual(first.next);
+      expect(restored.currentVersion("suffix")).toEqual(first.next);
+      expect(restored.snapshot(first.next).buffers.get("buffer")?.text).toBe("old\n");
+      expect(store.pending("thread").map((entry) => entry.requestId)).toEqual(["first", "suffix"]);
+      expect(store.pinned("thread", "pin")).toEqual(first.next);
+      store.close();
+      const db = new DatabaseSync(filename);
+      db.prepare("UPDATE replica_checkpoints SET sequence = sequence + 100").run();
+      db.close();
+      replayed = 0;
+      store = new LocalThreadStore(filename);
+      expect(store.load("thread").currentVersion("suffix")).toEqual(first.next);
+      expect(replayed).toBe(3);
+      expect(store.pending("thread").length).toBe(2);
+      expect(() =>
+        ThreadReplica.fromCheckpoint({ ...restored.checkpoint(), format: 2 } as never),
+      ).toThrow();
+      const checkpoint = restored.checkpoint();
+      expect(() =>
+        ThreadReplica.fromCheckpoint({
+          ...checkpoint,
+          timelines: [...checkpoint.timelines, checkpoint.timelines[0]!],
+        }),
+      ).toThrow();
+    } finally {
+      ThreadReplica.prototype.advance = original;
+      store.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("recovers pending edits, exact diffs, pinned B+ pages and checkout bindings after reopen", async () => {
     const directory = mkdtempSync(path.join(tmpdir(), "horizon-local-"));
     const filename = path.join(directory, "local.sqlite");

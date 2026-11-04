@@ -11,8 +11,8 @@ advance them; `AgentOrchestrator` composes only agent drivers.
 - `src/shared/snapshot.ts`: version reification, multi-value registers, add-wins
   maps, logical worktrees, continuous transcript sections, comments, reviews and
   context usage.
-- `src/shared/text-crdt.ts`: reference text CRDT using stable source fragments,
-  observed deletion, UTF-8 ranges and historical position translation.
+- `src/shared/text-crdt.ts` and `text-index.ts`: run-fragment text CRDT with a
+  byte-weighted B+ sequence index, observed deletion and historical positions.
 - `src/shared/review.ts`: version-pinned file diffs and per-person seen state.
 - `src/electron/local-store.ts`: main-process SQLite WAL journal, durable outbox,
   checkout bindings, content-addressed B+ pages, version pins and safe page GC.
@@ -91,15 +91,35 @@ Pi driver instances; a run is not resumed by resetting its sequence counter.
 - `checkpoint()`, `pin()`, `pinned()` and `compact()` manage immutable B+ pages.
   GC removes only unpinned derived pages, **never** causal history or pending
   operations, so comments, review snapshots and offline peers remain valid.
+- `checkpointReplay(threadId)` atomically captures the full causal graph, all
+  timeline frontiers/fork bases/labels and the SQLite journal cursor.
+  `checkpoint()` also refreshes this replay cache (at the current journal head,
+  even when the named pin targets a historical version). On reopen, `load()`
+  restores/validates the graph once per timeline and replays only later events;
+  it does not revalidate every old driver transition. SHA-256 binds both the
+  cursor and payload. Corrupt/unsupported caches fall back to the original log.
+  Acknowledgements and original outbox request IDs still come from that log;
+  checkpoints cannot turn pending operations into acknowledged operations.
+
+`TextSnapshot.fragments` now contains contiguous source **runs**, not one object
+per scalar. Use `selectFragments()` for exact UTF-8 ranges; selected runs are
+clipped to the requested source spans. A run split never creates new source
+identities. Comment resolution and seen-state comparisons use source spans,
+not array boundaries. Emoji, combining characters, BOM and CRLF retain their
+original bytes; a range/point inside a UTF-8 scalar is rejected.
 
 ### Current boundaries
 
 This is a correctness-first reference data layer, not a copy of DeltaDB's
-optimized diamond-types-inspired implementation. Text fragments are currently
-Unicode scalars and position lookup/reification still performs linear scans.
-The B+ store currently backs register/map checkpoints; run-coalesced text
-indexing, checkpoint-accelerated replay and causally safe log pruning remain
-performance work. A checkpoint is not permission to prune the operation log.
+optimized diamond-types-inspired implementation. Text insertions are stored as
+runs and split only at observed edit boundaries. The derived B+ index is
+bulk-loaded per immutable snapshot; positioning is logarithmic in run count
+plus decoding within the touched run. It is not yet a path-copying edit rope:
+source-run splitting still scans runs, and historical snapshot reification still
+visits causal deltas. Replay checkpoints skip repeated batch-level replay, but
+retain the complete graph and still materialize each restored timeline once.
+Maintenance callers explicitly choose when to checkpoint; there is no timer or
+automatic log-pruning policy. A checkpoint is not permission to prune the log.
 
 The matching server supports cross-instance live delivery through PostgreSQL
 notifications plus five-second durable revision reconciliation. Sync v2 wire
@@ -109,8 +129,13 @@ remain separate work; no filesystem or landing action happens on approval.
 
 Logical checkout metadata is ready; creating/syncing on-disk checkouts,
 Git rebasing/landing, binary files, attachment transfer and renderer/IPC UI
-integration are not implemented here. No Monaco change is needed for these
-APIs; the existing Git-pinned Monaco dependency is unchanged.
+integration are not implemented here. These data APIs require no new Monaco
+model behavior. The Monaco fork's Git-package build fix and sourced-edit smoke
+test are pinned by exact commit in `package.json` and `pnpm-lock.yaml`.
+`pnpm-workspace.yaml` approves this dependency's preparation build so its
+JavaScript and declaration entry points are generated during installation.
+Building an attached Monaco worktree alone does not update this installed
+dependency; a fork update requires publishing and explicitly updating the pin.
 
 ## Validation
 

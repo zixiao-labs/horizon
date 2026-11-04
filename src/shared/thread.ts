@@ -216,6 +216,14 @@ export interface RemoteAdvance {
   readonly deltas: readonly Delta[];
 }
 
+/** Local derived replay cache, not a wire message or permission to prune history. */
+export interface ReplicaCheckpoint {
+  readonly format: 1;
+  readonly thread_id: ThreadId;
+  readonly deltas: readonly Delta[];
+  readonly timelines: readonly Timeline[];
+}
+
 export class CausalGraph {
   readonly #deltas: Map<string, Delta>;
 
@@ -232,6 +240,10 @@ export class CausalGraph {
 
   clone(): CausalGraph {
     return new CausalGraph(this.#deltas.values());
+  }
+
+  deltas(): readonly Delta[] {
+    return [...this.#deltas.values()];
   }
 
   has(id: DeltaId): boolean {
@@ -378,6 +390,32 @@ export class ThreadReplica {
     const replica = new ThreadReplica(this.threadId);
     replica.#graph = this.#graph.clone();
     replica.#timelines = new Map(this.#timelines);
+    return replica;
+  }
+
+  checkpoint(): ReplicaCheckpoint {
+    return {
+      format: 1,
+      thread_id: this.threadId,
+      deltas: this.#graph.deltas(),
+      timelines: [...this.#timelines.values()],
+    };
+  }
+
+  /** Validate the graph once, not once for every historical driver transition. */
+  static fromCheckpoint(checkpoint: ReplicaCheckpoint): ThreadReplica {
+    if (checkpoint.format !== 1) throw new Error("Unsupported replica checkpoint");
+    const replica = new ThreadReplica(checkpoint.thread_id);
+    replica.#graph = new CausalGraph(checkpoint.deltas);
+    for (const timeline of checkpoint.timelines) {
+      if (replica.#timelines.has(timeline.id)) throw new Error("Duplicate checkpoint timeline");
+      replica.#graph.validateVersion(timeline.frontier);
+      replica.#graph.validateVersion(timeline.forked_from);
+      if (!replica.#graph.dominates(timeline.frontier, timeline.forked_from))
+        throw new Error("Checkpoint timeline precedes its fork");
+      replica.snapshot(timeline.frontier);
+      replica.#timelines.set(timeline.id, timeline);
+    }
     return replica;
   }
 
